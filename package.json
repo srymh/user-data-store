@@ -1,0 +1,32 @@
+{
+  "name": "user-data-store",
+  "description": "",
+  "version": "0.0.1",
+  "author": "srymh",
+  "files": [
+    "/dist-cjs",
+    "/dist-esm"
+  ],
+  "keywords": [],
+  "license": "MIT",
+  "main": "dist-cjs/index.js",
+  "module": "dist-esm/index.js",
+  "private": true,
+  "scripts": {
+    "build": "npm-run-all -s build:cjs build:esm",
+    "build:cjs": "tsc --project . --module commonjs --outDir ./dist-cjs",
+    "build:esm": "tsc --project . --module es2015 --outDir ./dist-esm",
+    "prebuild": "rimraf ./dist-*",
+    "prepare": "npm run build",
+    "test": "jest --watch"
+  },
+  "types": "dist-cjs/index.d.ts",
+  "devDependencies": {
+    "@types/jest": "^26.0.15",
+    "jest": "^26.6.3",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^26.4.4",
+    "typescript": "^4.0.5"
+  }
+}
