@@ -62,8 +62,7 @@ yarn add electron-store@5.2.0
 
 ``` ts
 import { UserDataStore } from "user-data-store";
-import { ElectronStoreDriver } from "user-data-store/dist-esm/drivers/ElectronStoreDriver";
-
+import { ElectronStoreDriver } from "user-data-store/dist-cjs/drivers/ElectronStoreDriver";
 
 // Example
 type Student = {
@@ -83,6 +82,9 @@ const student: Student = {
 userDataStore.setItem(student);
 // A json file named "School_Student.json" is saved.
 ```
+
+> `import { ElectronStoreDriver } from "user-data-store/dist-esm/drivers/ElectronStoreDriver";`  
+> causes "SyntaxError: Cannot use import statement outside a module"
 
 ### 3. Custom Store Driver
 
