@@ -1,10 +1,7 @@
 import {StoreDriver} from '../StoreDriver';
 import LocalForage from 'localforage';
 
-export type LocalForageDriverOptions = Pick<
-  LocalForageOptions,
-  'name' | 'storeName'
->;
+export type LocalForageDriverOptions = {name: string; storeName: string};
 
 export class LocalForageDriver<T> implements StoreDriver<T> {
   private store: LocalForage;
