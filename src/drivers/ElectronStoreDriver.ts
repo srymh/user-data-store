@@ -5,16 +5,15 @@ export type RecordType<T> = {
   [key: string]: T;
 };
 
-export type ElectronStoreDriverOptions<T> = Pick<
-  ElectronStore.Options<RecordType<T>>,
-  'name'
->;
+export type ElectronStoreDriverOptions = {name: string; storeName: string};
 
 export class ElectronStoreDriver<T> implements StoreDriver<T> {
   private store: ElectronStore<RecordType<T>>;
 
-  constructor(options?: ElectronStoreDriverOptions<T>) {
-    this.store = new ElectronStore<RecordType<T>>({...options});
+  constructor(options?: ElectronStoreDriverOptions) {
+    this.store = new ElectronStore<RecordType<T>>({
+      name: `${options?.name}_${options?.storeName}`,
+    });
   }
 
   async setItem(key: string, value: T): Promise<T | Error> {
