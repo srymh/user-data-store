@@ -1,10 +1,13 @@
+export {UserDataStore, UserDataStoreOptions} from './UserDataStore';
 export {
-  UserDataStore,
-  UserDataStoreOptions,
   DownloadJsonFile,
   ProvideKey,
   DataContainer,
   IsDataContainer,
   BackupData,
-} from './UserDataStore';
-export {StoreDriver, StoreDriverConstructor} from './StoreDriver';
+} from './Types';
+export {
+  StoreDriver,
+  StoreDriverConstructor,
+  StoreDriverBaseOptions,
+} from './StoreDriver';

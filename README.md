@@ -30,24 +30,35 @@ yarn add localforage
 ``` ts
 import { UserDataStore } from "user-data-store";
 // This driver supports only IndexedDB.
-import { LocalForageDriver } from "user-data-store/dist-esm/drivers/LocalForageDriver";
+import {
+  LocalForageDriver,
+  LocalForageDriverOptions,
+} from "user-data-store/dist-esm/drivers/LocalForageDriver";
+// Just for intellisense of `LocalForageDriverOptions`
+import 'localforage';
 
 // Example
 type Student = {
   name: string;
 };
 
-const userDataStore = new UserDataStore<Student>({
+const userDataStore = new UserDataStore<Student, LocalForageDriverOptions>({
   driver: LocalForageDriver,
+  // Intellisense is available if `import 'localforage'` is declared.
+  driverOptions: {
+    description: "sample text",
+  },
   name: "School", // IndexedDB: Database name
-  storeName: "Student" // IndexedDB: Table name
+  storeName: "Student", // IndexedDB: Table name
+  provideKey: (x) => x.name
 });
 
 const student: Student = {
-  name: "Szuki Taro"
+  name: "Tanaka Taro"
 };
 
 userDataStore.setItem(student);
+
 // A database is created with the name "School"
 // A table is created with the name "Student" in the School database.
 ```
@@ -62,24 +73,35 @@ yarn add electron-store@5.2.0
 
 ``` ts
 import { UserDataStore } from "user-data-store";
-import { ElectronStoreDriver } from "user-data-store/dist-cjs/drivers/ElectronStoreDriver";
+import {
+  ElectronStoreDriver,
+  ElectronStoreDriverOptions,
+} from "user-data-store/dist-cjs/drivers/ElectronStoreDriver";
 
 // Example
 type Student = {
   name: string;
 };
 
-const userDataStore = new UserDataStore<Student>({
+const userDataStore = new UserDataStore<
+  Student,
+  ElectronStoreDriverOptions<Student>
+>({
   driver: ElectronStoreDriver,
+  driverOptions: {
+    // fileExtension: "txt", // A json file named "School_Student.txt" is saved.
+  },
   name: "School",
-  storeName: "Student"
+  storeName: "Student",
+  provideKey: (x) => x.name
 });
 
 const student: Student = {
-  name: "Szuki Taro"
+  name: "Tanaka Taro"
 };
 
 userDataStore.setItem(student);
+
 // A json file named "School_Student.json" is saved.
 ```
 
@@ -89,4 +111,3 @@ userDataStore.setItem(student);
 ### 3. Custom Store Driver
 
 Custom driver class should implements `StoreDriver`.
-

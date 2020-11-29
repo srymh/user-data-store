@@ -1,47 +1,28 @@
 import md5 from 'md5';
 import {provideKey} from './utils/provideKey';
 import {downloadJsonFile} from './utils/downloadJsonFile';
-import {StoreDriver, StoreDriverConstructor} from './StoreDriver';
+import {
+  DataContainer,
+  IsDataContainer,
+  BackupData,
+  DownloadJsonFile,
+  ProvideKey,
+} from './Types';
+import {
+  StoreDriver,
+  StoreDriverConstructor,
+  StoreDriverBaseOptions,
+} from './StoreDriver';
 
-export type DataContainer<T> = {
-  key: string;
-  storedAt: string;
-  data: T;
-};
-
-export function IsDataContainer(arg: any): arg is DataContainer<unknown> {
-  if (typeof arg !== 'object') {
-    return false;
-  } else if (typeof arg?.key !== 'string') {
-    return false;
-  } else if (typeof arg?.storedAt !== 'string') {
-    return false;
-  } else if (arg?.data === undefined) {
-    return false;
-  } else {
-    return true;
-  }
-}
-
-export type BackupData = {
-  key: string;
-  storedAt: string;
-  json: string;
-};
-
-export type DownloadJsonFile = (fileName: string, text: string) => void;
-export type ProvideKey<T> = (value: T) => string;
-
-export type UserDataStoreOptions<T> = {
+export type UserDataStoreOptions<T, U = {}> = {
   driver: StoreDriverConstructor;
-  name: string;
-  storeName: string;
+  driverOptions?: U;
   downloadJsonFile?: DownloadJsonFile;
   confirmType?: (arg: any) => arg is T;
   provideKey?: ProvideKey<T>;
-};
+} & StoreDriverBaseOptions;
 
-export class UserDataStore<T> {
+export class UserDataStore<T, U = {}> {
   private store: StoreDriver<DataContainer<T>>;
   private backupStore: StoreDriver<BackupData>;
   private _name: string;
@@ -50,19 +31,25 @@ export class UserDataStore<T> {
   private confirmType: ((arg: any) => arg is T) | null;
   private provideKey: ProvideKey<T>;
 
-  constructor(options: UserDataStoreOptions<T>) {
+  constructor(options: UserDataStoreOptions<T, U>) {
     this._name = options.name;
     this.storeName = options.storeName;
     this.downloadJsonFile = options.downloadJsonFile ?? downloadJsonFile;
     this.confirmType = options.confirmType ?? null;
     this.provideKey = options.provideKey ?? provideKey;
     this.store = new options.driver<DataContainer<T>>({
-      name: options.name,
-      storeName: options.storeName,
+      ...options.driverOptions,
+      ...{
+        name: options.name,
+        storeName: options.storeName,
+      },
     });
     this.backupStore = new options.driver<BackupData>({
-      name: options.name,
-      storeName: options.storeName + '_bak',
+      ...options.driverOptions,
+      ...{
+        name: options.name,
+        storeName: options.storeName + '_bak',
+      },
     });
   }
 

@@ -6,6 +6,8 @@ export interface StoreDriver<T> {
   clear(): Promise<void>;
 }
 
+export type StoreDriverBaseOptions = {name: string; storeName: string};
+
 export interface StoreDriverConstructor {
-  new <T>(options: {name: string; storeName: string}): StoreDriver<T>;
+  new <T>(options: StoreDriverBaseOptions): StoreDriver<T>;
 }
