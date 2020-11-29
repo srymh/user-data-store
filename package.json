@@ -1,7 +1,7 @@
 {
   "name": "user-data-store",
   "description": "",
-  "version": "0.1.1",
+  "version": "0.1.4",
   "author": "srymh",
   "files": [
     "/dist-cjs",
@@ -19,7 +19,9 @@
     "build:esm": "tsc --project . --module esnext --outDir ./dist-esm",
     "prebuild": "rimraf ./dist-*",
     "prepare": "npm run build",
-    "test": "jest --watch"
+    "test": "jest --watch",
+    "watch:cjs": "npm run build:cjs -- --watch --noEmit",
+    "watch:esm": "npm run build:esm -- --watch --noEmit"
   },
   "types": "dist-esm/index.d.ts",
   "devDependencies": {

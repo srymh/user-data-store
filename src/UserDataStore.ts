@@ -3,7 +3,27 @@ import {provideKey} from './utils/provideKey';
 import {downloadJsonFile} from './utils/downloadJsonFile';
 import {StoreDriver, StoreDriverConstructor} from './StoreDriver';
 
-type BackupData = {
+export type DataContainer<T> = {
+  key: string;
+  storedAt: string;
+  data: T;
+};
+
+export function IsDataContainer(arg: any): arg is DataContainer<unknown> {
+  if (typeof arg !== 'object') {
+    return false;
+  } else if (typeof arg?.key !== 'string') {
+    return false;
+  } else if (typeof arg?.storedAt !== 'string') {
+    return false;
+  } else if (arg?.data === undefined) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+export type BackupData = {
   key: string;
   storedAt: string;
   json: string;
@@ -22,7 +42,7 @@ export type UserDataStoreOptions<T> = {
 };
 
 export class UserDataStore<T> {
-  private store: StoreDriver<T>;
+  private store: StoreDriver<DataContainer<T>>;
   private backupStore: StoreDriver<BackupData>;
   private _name: string;
   private storeName: string;
@@ -36,7 +56,7 @@ export class UserDataStore<T> {
     this.downloadJsonFile = options.downloadJsonFile ?? downloadJsonFile;
     this.confirmType = options.confirmType ?? null;
     this.provideKey = options.provideKey ?? provideKey;
-    this.store = new options.driver<T>({
+    this.store = new options.driver<DataContainer<T>>({
       name: options.name,
       storeName: options.storeName,
     });
@@ -50,24 +70,38 @@ export class UserDataStore<T> {
     return this._name;
   }
 
-  public async setItem(value: T): Promise<T | Error> {
-    const key = this.provideKey(value);
+  private async setItemCore(
+    value: DataContainer<T>
+  ): Promise<DataContainer<T> | Error> {
     if (this.confirmType) {
-      if (this.confirmType(value)) {
-        return await this.store.setItem(key, value);
+      if (this.confirmType(value.data)) {
+        return await this.store.setItem(value.key, value);
       } else {
-        return new Error(`Failed setItem: typeof value is wrong`);
+        return new Error(`Failed setItemCore: typeof value is wrong`);
       }
     } else {
-      return await this.store.setItem(key, value);
+      return await this.store.setItem(value.key, value);
     }
   }
 
-  public async getItem(key: string): Promise<T | null> {
+  public async setItem(
+    value: T,
+    key?: string
+  ): Promise<DataContainer<T> | Error> {
+    const realKey = key ?? this.provideKey(value);
+    const data: DataContainer<T> = {
+      key: realKey,
+      storedAt: this.getTimestamp(),
+      data: value,
+    };
+    return await this.setItemCore(data);
+  }
+
+  public async getItem(key: string): Promise<DataContainer<T> | null> {
     return await this.store.getItem(key);
   }
 
-  public async getItems(): Promise<T[]> {
+  public async getItems(): Promise<DataContainer<T>[]> {
     return await this.store.getItems();
   }
 
@@ -99,7 +133,7 @@ export class UserDataStore<T> {
         return [
           key,
           new Error(
-            `Failed restore: Unexpected Error. Backup data are broken.`
+            `Failed restore: Unexpected Error. Backup data are broken.\n${error.message}`
           ),
         ];
       } else {
@@ -129,8 +163,8 @@ export class UserDataStore<T> {
    * }
    * ```
    *
-   * @param json Data to import
-   * @returns Key to restore before importing json. If error, also return `Error`.
+   * @param json Data to import (expected that is exported by `this.exportAsJson`)
+   * @returns Key to restore before importing json. And if error, also return `Error`.
    */
   public async importJson(json: string): Promise<[string, Error?]> {
     const backupJson = await this.exportAsJson();
@@ -149,12 +183,19 @@ export class UserDataStore<T> {
       return [backupKey, new Error('Failed importByJson: Invalid JSON')];
     } else {
       for (const item of parsed) {
-        const maybeError = await this.setItem(item);
-        if (maybeError instanceof Error) {
-          // Shoud I rollback?
+        if (IsDataContainer(item)) {
+          const maybeError = await this.setItemCore(item as DataContainer<T>); // type is checked in `setItemCore`
+          if (maybeError instanceof Error) {
+            // Shoud I rollback?
+            return [
+              backupKey,
+              new Error(`Failed importByJson: ${maybeError.message}`),
+            ];
+          }
+        } else {
           return [
             backupKey,
-            new Error(`Failed importByJson: ${maybeError.message}`),
+            new Error(`Failed importByJson: Invalid data format`),
           ];
         }
       }
@@ -164,7 +205,7 @@ export class UserDataStore<T> {
   }
 
   public async exportAsJson() {
-    const arr: T[] = await this.getItems();
+    const arr: DataContainer<T>[] = await this.getItems();
     return JSON.stringify(arr);
   }
 
@@ -200,5 +241,9 @@ export class UserDataStore<T> {
 
   public async getBackup(key: string) {
     return await this.backupStore.getItem(key);
+  }
+
+  private getTimestamp() {
+    return new Date(Date.now()).toISOString();
   }
 }
