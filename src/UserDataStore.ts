@@ -62,7 +62,7 @@ export class UserDataStore<T> {
     });
     this.backupStore = new options.driver<BackupData>({
       name: options.name,
-      storeName: options.storeName,
+      storeName: options.storeName + '_bak',
     });
   }
 
