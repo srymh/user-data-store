@@ -2,7 +2,7 @@
  * This test depends on the localforage mock.
  * I think this is not very reliable.
  */
-import {md5hex} from './utils/md5hex';
+import md5 from 'md5';
 import {
   UserDataStore,
   UserDataStoreOptions,
@@ -291,7 +291,7 @@ describe('UserDataStore class', function () {
         data: {name: 'Hanako', age: 50},
       },
     ];
-    const data1key = md5hex(JSON.stringify(data1));
+    const data1key = md5(JSON.stringify(data1));
     const data2: DataContainer<Person>[] = [
       {key: 'Taro', storedAt: getTimestamp(), data: {name: 'Taro', age: 25}},
       {
@@ -343,7 +343,7 @@ describe('UserDataStore class', function () {
     const result = await uds.exportAsJsonFile();
     if (result instanceof Error) {
       expect(result.message).toBe(
-        `${storeName}_${md5hex(JSON.stringify(data))}.json`
+        `${storeName}_${md5(JSON.stringify(data))}.json`
       );
     }
   });

@@ -1,4 +1,4 @@
-import {md5hex} from './utils/md5hex';
+import md5 from 'md5';
 import {provideKey} from './utils/provideKey';
 import {downloadJsonFile} from './utils/downloadJsonFile';
 import {StoreDriver, StoreDriverConstructor} from './StoreDriver';
@@ -114,7 +114,7 @@ export class UserDataStore<T> {
   }
 
   public async backup(json: string): Promise<string> {
-    const backupKey = md5hex(json);
+    const backupKey = md5(json);
     const backupData: BackupData = {
       key: backupKey,
       storedAt: new Date(Date.now()).toISOString(),
@@ -212,7 +212,7 @@ export class UserDataStore<T> {
   public async exportAsJsonFile(fileName?: string): Promise<string | Error> {
     if (this.downloadJsonFile) {
       const json = await this.exportAsJson();
-      const fName = fileName ?? `${this.storeName}_${md5hex(json)}.json`;
+      const fName = fileName ?? `${this.storeName}_${md5(json)}.json`;
       this.downloadJsonFile(fName, json);
       return fName;
     } else {
