@@ -1,12 +1,15 @@
-import {StoreDriver} from '../StoreDriver';
+import {StoreDriver, StoreDriverBaseOptions} from '../StoreDriver';
 import LocalForage from 'localforage';
 
-export type LocalForageDriverOptions = {name: string; storeName: string};
+export type LocalForageDriverOptions = Omit<
+  LocalForageOptions,
+  'name' | 'storeName' | 'driver'
+>;
 
 export class LocalForageDriver<T> implements StoreDriver<T> {
   private store: LocalForage;
 
-  constructor(options?: LocalForageDriverOptions) {
+  constructor(options: StoreDriverBaseOptions & LocalForageDriverOptions) {
     this.store = LocalForage.createInstance({
       ...options,
       driver: LocalForage.INDEXEDDB,

@@ -3,12 +3,8 @@
  * I think this is not very reliable.
  */
 import md5 from 'md5';
-import {
-  UserDataStore,
-  UserDataStoreOptions,
-  DataContainer,
-  IsDataContainer,
-} from './UserDataStore';
+import {UserDataStore, UserDataStoreOptions} from './UserDataStore';
+import {DataContainer, IsDataContainer} from './Types';
 import {LocalForageDriver} from './drivers/LocalForageDriver';
 
 type Person = {

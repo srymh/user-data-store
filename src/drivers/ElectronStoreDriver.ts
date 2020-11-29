@@ -1,18 +1,25 @@
-import {StoreDriver} from '../StoreDriver';
+import {StoreDriver, StoreDriverBaseOptions} from '../StoreDriver';
 import ElectronStore from 'electron-store';
 
 export type RecordType<T> = {
   [key: string]: T;
 };
 
-export type ElectronStoreDriverOptions = {name: string; storeName: string};
+export type ElectronStoreDriverOptions<T> = Omit<
+  ElectronStore.Options<RecordType<T>>,
+  'name'
+>;
 
 export class ElectronStoreDriver<T> implements StoreDriver<T> {
   private store: ElectronStore<RecordType<T>>;
 
-  constructor(options?: ElectronStoreDriverOptions) {
+  constructor(options: StoreDriverBaseOptions & ElectronStoreDriverOptions<T>) {
     this.store = new ElectronStore<RecordType<T>>({
-      name: `${options?.name}_${options?.storeName}`,
+      ...options,
+      ...{
+        name: `${options.name}_${options.storeName}`,
+        storeName: undefined,
+      },
     });
   }
 
