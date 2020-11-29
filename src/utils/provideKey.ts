@@ -1,4 +1,4 @@
-import {md5hex} from './md5hex';
+import md5 from 'md5';
 export const provideKey = <T>(v: T): string => {
-  return md5hex(JSON.stringify(v));
+  return md5(JSON.stringify(v));
 };
