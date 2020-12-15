@@ -24,5 +24,8 @@ export type BackupData = {
   json: string;
 };
 
-export type DownloadJsonFile = (fileName: string, text: string) => void;
+export type DownloadJsonFile = (
+  fileName: string,
+  text: string
+) => Promise<Error | void>;
 export type ProvideKey<T> = (value: T) => string;

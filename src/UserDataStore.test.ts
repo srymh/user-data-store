@@ -327,8 +327,13 @@ describe('UserDataStore class', function () {
   });
 
   test('setItemで設定したデータをjsonファイルとしてダウンロードする', async () => {
-    const download = (filename: string, text: string) => {
-      // console.log(filename, text);
+    const download = (
+      filename: string,
+      text: string
+    ): Promise<Error | void> => {
+      return new Promise((resove) => {
+        resove();
+      });
     };
     const uds = new UserDataStore<Person>({
       ...options,
@@ -346,9 +351,14 @@ describe('UserDataStore class', function () {
 
   test('importJsonで設定したデータをjsonファイルとしてダウンロードする', async () => {
     let filename_: string;
-    const download = (filename: string, text: string) => {
-      filename_ = filename;
-      // console.log(filename, text);
+    const download = (
+      filename: string,
+      text: string
+    ): Promise<Error | void> => {
+      return new Promise((resove) => {
+        filename_ = filename;
+        resove();
+      });
     };
     const uds = new UserDataStore<Person>({
       ...options,

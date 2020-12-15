@@ -1,6 +1,6 @@
 import md5 from 'md5';
 import {provideKey} from './utils/provideKey';
-import {downloadJsonFile} from './utils/downloadJsonFile';
+import {downloadJsonFileAsync} from './utils/downloadJsonFile';
 import {
   DataContainer,
   IsDataContainer,
@@ -34,7 +34,7 @@ export class UserDataStore<T, U = {}> {
   constructor(options: UserDataStoreOptions<T, U>) {
     this._name = options.name;
     this.storeName = options.storeName;
-    this.downloadJsonFile = options.downloadJsonFile ?? downloadJsonFile;
+    this.downloadJsonFile = options.downloadJsonFile ?? downloadJsonFileAsync;
     this.confirmType = options.confirmType ?? null;
     this.provideKey = options.provideKey ?? provideKey;
     this.store = new options.driver<DataContainer<T>>({
@@ -200,8 +200,12 @@ export class UserDataStore<T, U = {}> {
     if (this.downloadJsonFile) {
       const json = await this.exportAsJson();
       const fName = fileName ?? `${this.storeName}_${md5(json)}.json`;
-      this.downloadJsonFile(fName, json);
-      return fName;
+      const result = await this.downloadJsonFile(fName, json);
+      if (result instanceof Error) {
+        return result;
+      } else {
+        return fName;
+      }
     } else {
       return new Error('Faild exportAsJsonFile: Export function is not set');
     }
