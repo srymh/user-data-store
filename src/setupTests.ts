@@ -39,12 +39,12 @@ jest.mock('localforage', () => {
             callback?: (err: any, result: U) => void
           ): Promise<U> => {
             return new Promise((resolve) => {
-              let result: U;
+              let result = {};
               Object.keys(storage).forEach((key, i) => {
                 result = iteratee(storage[key], key, i);
               });
-              if (callback) callback(null, result);
-              resolve(result);
+              if (callback) callback(null, result as U);
+              resolve(result as U);
             });
           },
         };

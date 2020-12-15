@@ -108,7 +108,7 @@ describe('UserDataStore class', function () {
     await uds.setItem(data[0]);
     await uds.setItem(data[1]);
     const json = await uds.exportAsJson();
-    expect(JSON.parse(json).map((x) => x.data)).toEqual(data);
+    expect(JSON.parse(json).map((x: any) => x.data)).toEqual(data);
   });
 
   test('jsonでデータを設定する', async () => {
@@ -196,13 +196,13 @@ describe('UserDataStore class', function () {
     await sleep(10);
     const [, error2] = await uds.importJson(JSON.stringify(data2));
     if (error2) {
-      throw new Error(error.message);
+      throw new Error(error2.message);
     }
     const latestBackupKey = await uds.getLatestBackupKey();
     const backup = await uds.getBackup(latestBackupKey);
     expect(backup).not.toBeNull();
     if (backup) {
-      expect(JSON.parse(backup.json).map((x) => x.data)).toEqual(
+      expect(JSON.parse(backup.json).map((x: any) => x.data)).toEqual(
         data1.map((x) => x.data)
       );
     }
@@ -231,7 +231,7 @@ describe('UserDataStore class', function () {
     await uds.importJson(JSON.stringify(data1)); // data2 がバックアップされる
 
     const backups = (await uds.getAllBackup()).map((x) =>
-      JSON.parse(x.json).map((y) => y.data)
+      JSON.parse(x.json).map((y: any) => y.data)
     );
     expect(backups).toStrictEqual([
       [],
@@ -271,7 +271,7 @@ describe('UserDataStore class', function () {
     const backup = await uds.getBackup(key);
     expect(backup).not.toBeNull();
     if (backup) {
-      expect(JSON.parse(backup.json).map((x) => x.data)).toStrictEqual(
+      expect(JSON.parse(backup.json).map((x: any) => x.data)).toStrictEqual(
         data1.map((x) => x.data)
       );
     }
@@ -328,8 +328,8 @@ describe('UserDataStore class', function () {
 
   test('setItemで設定したデータをjsonファイルとしてダウンロードする', async () => {
     const download = (
-      filename: string,
-      text: string
+      _filename: string,
+      _text: string
     ): Promise<Error | void> => {
       return new Promise((resove) => {
         resove();
@@ -350,10 +350,10 @@ describe('UserDataStore class', function () {
   });
 
   test('importJsonで設定したデータをjsonファイルとしてダウンロードする', async () => {
-    let filename_: string;
+    let filename_: string = '';
     const download = (
       filename: string,
-      text: string
+      _text: string
     ): Promise<Error | void> => {
       return new Promise((resove) => {
         filename_ = filename;
