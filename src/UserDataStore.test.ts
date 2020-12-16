@@ -391,6 +391,116 @@ describe('UserDataStore class', function () {
       'Failed setItemCore: typeof value is wrong'
     );
   });
+
+  describe('onXXX', () => {
+    const person: Person = {
+      name: 'Alpha',
+      age: 100,
+    };
+    let uds: UserDataStore<Person>;
+    beforeEach(() => {
+      uds = new UserDataStore<Person>({
+        driver: LocalForageDriver,
+        name: 'X',
+        storeName: 'Y',
+        provideKey: (x) => x.name,
+      });
+    });
+
+    test('onSetItem', async () => {
+      uds.onSetItem = (key, result) => {
+        expect(key).toBe(person.name);
+        if (!(result instanceof Error)) {
+          expect(result.data).toEqual(person);
+        } else {
+          throw result;
+        }
+      };
+
+      await uds.setItem(person);
+    });
+
+    test('onGetItem', async () => {
+      await uds.setItem(person);
+
+      uds.onGetItem = (key, result) => {
+        expect(key).toBe(person.name);
+        if (result instanceof Error) {
+          throw result;
+        } else if (result) {
+          expect(result.data).toEqual(person);
+        } else {
+          throw new Error();
+        }
+      };
+
+      await uds.getItem(person.name);
+    });
+
+    test('onGetItems', async () => {
+      await uds.setItem(person);
+      const anotherKey = 'Apple';
+      await uds.setItem(person, anotherKey);
+
+      uds.onGetItems = (result) => {
+        expect(result[0].key).toEqual(person.name);
+        expect(result[0].data).toEqual(person);
+        expect(result[1].key).toEqual(anotherKey);
+        expect(result[1].data).toEqual(person);
+      };
+
+      await uds.getItems();
+    });
+
+    test('onRemoveItem', async () => {
+      await uds.setItem(person);
+      const anotherKey = 'Apple';
+      await uds.setItem(person, anotherKey);
+
+      uds.onRemoveItem = (key) => {
+        expect(key).toEqual(anotherKey);
+      };
+
+      await uds.removeItem(anotherKey);
+    });
+
+    test('onClear', async () => {
+      const obj = {
+        value: 30,
+      };
+      const newObjValue = 50;
+      await uds.setItem(person);
+      uds.onClear = () => {
+        obj.value = newObjValue;
+      };
+      await uds.clear();
+      expect(obj.value).toBe(newObjValue);
+    });
+
+    test('onImportJson', async () => {
+      uds.onImportJson = (result) => {
+        const [backupKey, error] = result;
+        expect(backupKey).toBe('d751713988987e9331980363e24189ce');
+        expect(error).toBeUndefined();
+      };
+
+      const data: DataContainer<Person>[] = [
+        {
+          key: person.name,
+          storedAt: new Date(Date.now()).toISOString(),
+          data: person,
+        },
+      ];
+      await uds.importJson(JSON.stringify(data));
+    });
+
+    test('onExportJson', async () => {
+      uds.onExportJson = (result) => {
+        expect(result).toBe(JSON.stringify([]));
+      };
+      await uds.exportAsJson();
+    });
+  });
 });
 
 describe('IsData', () => {

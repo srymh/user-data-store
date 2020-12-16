@@ -30,6 +30,17 @@ export class UserDataStore<T, U = {}> {
   private downloadJsonFile: DownloadJsonFile | null;
   private confirmType: ((arg: any) => arg is T) | null;
   private provideKey: ProvideKey<T>;
+  private _onSetItem:
+    | ((key: string, result: DataContainer<T> | Error) => void)
+    | null = null;
+  private _onGetItem:
+    | ((key: string, result: DataContainer<T> | null) => void)
+    | null = null;
+  private _onGetItems: ((result: DataContainer<T>[]) => void) | null = null;
+  private _onRemoveItem: ((key: string) => void) | null = null;
+  private _onClear: (() => void) | null = null;
+  private _onImportJson: ((result: [string, Error?]) => void) | null = null;
+  private _onExportJson: ((result: string) => void) | null = null;
 
   constructor(options: UserDataStoreOptions<T, U>) {
     this._name = options.name;
@@ -57,6 +68,42 @@ export class UserDataStore<T, U = {}> {
     return this._name;
   }
 
+  public set onSetItem(
+    handler: ((key: string, result: DataContainer<T> | Error) => void) | null
+  ) {
+    this._onSetItem = handler;
+  }
+
+  public set onGetItem(
+    handler: ((key: string, result: DataContainer<T> | null) => void) | null
+  ) {
+    this._onGetItem = handler;
+  }
+
+  public set onGetItems(
+    handler: ((result: DataContainer<T>[]) => void) | null
+  ) {
+    this._onGetItems = handler;
+  }
+
+  public set onRemoveItem(handler: ((key: string) => void) | null) {
+    this._onRemoveItem = handler;
+  }
+
+  public set onClear(handler: (() => void) | null) {
+    this._onClear = handler;
+  }
+
+  public set onImportJson(
+    handler: ((result: [string, Error?]) => void) | null
+  ) {
+    this._onImportJson = handler;
+  }
+
+  public set onExportJson(handler: ((result: string) => void) | null) {
+    this._onExportJson = handler;
+  }
+
   private async setItemCore(
     value: DataContainer<T>
   ): Promise<DataContainer<T> | Error> {
@@ -81,23 +128,41 @@ export class UserDataStore<T, U = {}> {
       storedAt: this.getTimestamp(),
       data: value,
     };
-    return await this.setItemCore(data);
+    const result = await this.setItemCore(data);
+    if (this._onSetItem) {
+      this._onSetItem(realKey, result);
+    }
+    return result;
   }
 
   public async getItem(key: string): Promise<DataContainer<T> | null> {
-    return await this.store.getItem(key);
+    const result = await this.store.getItem(key);
+    if (this._onGetItem) {
+      this._onGetItem(key, result);
+    }
+    return result;
   }
 
   public async getItems(): Promise<DataContainer<T>[]> {
-    return await this.store.getItems();
+    const result = await this.store.getItems();
+    if (this._onGetItems) {
+      this._onGetItems(result);
+    }
+    return result;
   }
 
   public async removeItem(key: string): Promise<void> {
     await this.store.removeItem(key);
+    if (this._onRemoveItem) {
+      this._onRemoveItem(key);
+    }
   }
 
   public async clear(): Promise<void> {
     await this.store.clear();
+    if (this._onClear) {
+      this._onClear();
+    }
   }
 
   public async backup(json: string): Promise<string> {
@@ -154,6 +219,7 @@ export class UserDataStore<T, U = {}> {
    * @returns Key to restore before importing json. And if error, also return `Error`.
    */
   public async importJson(json: string): Promise<[string, Error?]> {
+    let result: [string, Error?];
     const backupJson = await this.exportAsJson();
     const backupKey = await this.backup(backupJson);
 
@@ -162,38 +228,49 @@ export class UserDataStore<T, U = {}> {
     try {
       // var の使いどころ
       var parsed = JSON.parse(json);
-    } catch (error) {
-      return [backupKey, new Error(`Failed importByJson: ${error.message}`)];
-    }
+      if (!Array.isArray(parsed)) {
+        result = [backupKey, new Error('Failed importByJson: Invalid JSON')];
+      } else {
+        result = [backupKey];
 
-    if (!Array.isArray(parsed)) {
-      return [backupKey, new Error('Failed importByJson: Invalid JSON')];
-    } else {
-      for (const item of parsed) {
-        if (IsDataContainer(item)) {
-          const maybeError = await this.setItemCore(item as DataContainer<T>); // type is checked in `setItemCore`
-          if (maybeError instanceof Error) {
-            // Shoud I rollback?
-            return [
+        for (const item of parsed) {
+          if (IsDataContainer(item)) {
+            const maybeError = await this.setItemCore(item as DataContainer<T>); // type is checked in `setItemCore`
+            if (maybeError instanceof Error) {
+              // Shoud I rollback?
+              result = [
+                backupKey,
+                new Error(`Failed importByJson: ${maybeError.message}`),
+              ];
+              break;
+            }
+          } else {
+            result = [
               backupKey,
-              new Error(`Failed importByJson: ${maybeError.message}`),
+              new Error(`Failed importByJson: Invalid data format`),
             ];
+            break;
           }
-        } else {
-          return [
-            backupKey,
-            new Error(`Failed importByJson: Invalid data format`),
-          ];
         }
       }
+    } catch (error) {
+      result = [backupKey, new Error(`Failed importByJson: ${error.message}`)];
     }
 
-    return [backupKey];
+    if (this._onImportJson) {
+      this._onImportJson(result);
+    }
+
+    return result;
   }
 
   public async exportAsJson() {
     const arr: DataContainer<T>[] = await this.getItems();
-    return JSON.stringify(arr);
+    const json = JSON.stringify(arr);
+    if (this._onExportJson) {
+      this._onExportJson(json);
+    }
+    return json;
   }
 
   public async exportAsJsonFile(fileName?: string): Promise<string | Error> {
