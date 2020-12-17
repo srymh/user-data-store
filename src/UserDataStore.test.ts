@@ -108,7 +108,7 @@ describe('UserDataStore class', function () {
     await uds.setItem(data[0]);
     await uds.setItem(data[1]);
     const json = await uds.exportAsJson();
-    expect(JSON.parse(json).map((x) => x.data)).toEqual(data);
+    expect(JSON.parse(json).map((x: any) => x.data)).toEqual(data);
   });
 
   test('jsonでデータを設定する', async () => {
@@ -196,13 +196,13 @@ describe('UserDataStore class', function () {
     await sleep(10);
     const [, error2] = await uds.importJson(JSON.stringify(data2));
     if (error2) {
-      throw new Error(error.message);
+      throw new Error(error2.message);
     }
     const latestBackupKey = await uds.getLatestBackupKey();
     const backup = await uds.getBackup(latestBackupKey);
     expect(backup).not.toBeNull();
     if (backup) {
-      expect(JSON.parse(backup.json).map((x) => x.data)).toEqual(
+      expect(JSON.parse(backup.json).map((x: any) => x.data)).toEqual(
         data1.map((x) => x.data)
       );
     }
@@ -231,7 +231,7 @@ describe('UserDataStore class', function () {
     await uds.importJson(JSON.stringify(data1)); // data2 がバックアップされる
 
     const backups = (await uds.getAllBackup()).map((x) =>
-      JSON.parse(x.json).map((y) => y.data)
+      JSON.parse(x.json).map((y: any) => y.data)
     );
     expect(backups).toStrictEqual([
       [],
@@ -271,7 +271,7 @@ describe('UserDataStore class', function () {
     const backup = await uds.getBackup(key);
     expect(backup).not.toBeNull();
     if (backup) {
-      expect(JSON.parse(backup.json).map((x) => x.data)).toStrictEqual(
+      expect(JSON.parse(backup.json).map((x: any) => x.data)).toStrictEqual(
         data1.map((x) => x.data)
       );
     }
@@ -327,8 +327,13 @@ describe('UserDataStore class', function () {
   });
 
   test('setItemで設定したデータをjsonファイルとしてダウンロードする', async () => {
-    const download = (filename: string, text: string) => {
-      // console.log(filename, text);
+    const download = (
+      _filename: string,
+      _text: string
+    ): Promise<Error | void> => {
+      return new Promise((resove) => {
+        resove();
+      });
     };
     const uds = new UserDataStore<Person>({
       ...options,
@@ -345,10 +350,15 @@ describe('UserDataStore class', function () {
   });
 
   test('importJsonで設定したデータをjsonファイルとしてダウンロードする', async () => {
-    let filename_: string;
-    const download = (filename: string, text: string) => {
-      filename_ = filename;
-      // console.log(filename, text);
+    let filename_: string = '';
+    const download = (
+      filename: string,
+      _text: string
+    ): Promise<Error | void> => {
+      return new Promise((resove) => {
+        filename_ = filename;
+        resove();
+      });
     };
     const uds = new UserDataStore<Person>({
       ...options,
@@ -380,6 +390,116 @@ describe('UserDataStore class', function () {
     expect((result as Error).message).toBe(
       'Failed setItemCore: typeof value is wrong'
     );
+  });
+
+  describe('onXXX', () => {
+    const person: Person = {
+      name: 'Alpha',
+      age: 100,
+    };
+    let uds: UserDataStore<Person>;
+    beforeEach(() => {
+      uds = new UserDataStore<Person>({
+        driver: LocalForageDriver,
+        name: 'X',
+        storeName: 'Y',
+        provideKey: (x) => x.name,
+      });
+    });
+
+    test('onSetItem', async () => {
+      uds.onSetItem = (key, result) => {
+        expect(key).toBe(person.name);
+        if (!(result instanceof Error)) {
+          expect(result.data).toEqual(person);
+        } else {
+          throw result;
+        }
+      };
+
+      await uds.setItem(person);
+    });
+
+    test('onGetItem', async () => {
+      await uds.setItem(person);
+
+      uds.onGetItem = (key, result) => {
+        expect(key).toBe(person.name);
+        if (result instanceof Error) {
+          throw result;
+        } else if (result) {
+          expect(result.data).toEqual(person);
+        } else {
+          throw new Error();
+        }
+      };
+
+      await uds.getItem(person.name);
+    });
+
+    test('onGetItems', async () => {
+      await uds.setItem(person);
+      const anotherKey = 'Apple';
+      await uds.setItem(person, anotherKey);
+
+      uds.onGetItems = (result) => {
+        expect(result[0].key).toEqual(person.name);
+        expect(result[0].data).toEqual(person);
+        expect(result[1].key).toEqual(anotherKey);
+        expect(result[1].data).toEqual(person);
+      };
+
+      await uds.getItems();
+    });
+
+    test('onRemoveItem', async () => {
+      await uds.setItem(person);
+      const anotherKey = 'Apple';
+      await uds.setItem(person, anotherKey);
+
+      uds.onRemoveItem = (key) => {
+        expect(key).toEqual(anotherKey);
+      };
+
+      await uds.removeItem(anotherKey);
+    });
+
+    test('onClear', async () => {
+      const obj = {
+        value: 30,
+      };
+      const newObjValue = 50;
+      await uds.setItem(person);
+      uds.onClear = () => {
+        obj.value = newObjValue;
+      };
+      await uds.clear();
+      expect(obj.value).toBe(newObjValue);
+    });
+
+    test('onImportJson', async () => {
+      uds.onImportJson = (result) => {
+        const [backupKey, error] = result;
+        expect(backupKey).toBe('d751713988987e9331980363e24189ce');
+        expect(error).toBeUndefined();
+      };
+
+      const data: DataContainer<Person>[] = [
+        {
+          key: person.name,
+          storedAt: new Date(Date.now()).toISOString(),
+          data: person,
+        },
+      ];
+      await uds.importJson(JSON.stringify(data));
+    });
+
+    test('onExportJson', async () => {
+      uds.onExportJson = (result) => {
+        expect(result).toBe(JSON.stringify([]));
+      };
+      await uds.exportAsJson();
+    });
   });
 });
 
