@@ -107,7 +107,7 @@ describe('UserDataStore class', function () {
     ];
     await uds.setItem(data[0]);
     await uds.setItem(data[1]);
-    const json = await uds.exportAsJson();
+    const json = await uds.exportJson();
     expect(JSON.parse(json).map((x: any) => x.data)).toEqual(data);
   });
 
@@ -341,7 +341,7 @@ describe('UserDataStore class', function () {
     });
     const data: Person[] = [{name: 'Taro', age: 20}];
     await uds.setItem(data[0]);
-    const result = await uds.exportAsJsonFile();
+    const result = await uds.exportJsonFile();
     if (result instanceof Error) {
       expect(result.message).toBe(
         `${storeName}_${md5(JSON.stringify(data))}.json`
@@ -366,7 +366,7 @@ describe('UserDataStore class', function () {
     });
     const data: any = [{name: 'Taro', age: 20}];
     await uds.importJson(JSON.stringify(data));
-    const result = await uds.exportAsJsonFile();
+    const result = await uds.exportJsonFile();
     if (!(result instanceof Error)) {
       expect(result).toBe(filename_);
     }
@@ -498,7 +498,7 @@ describe('UserDataStore class', function () {
       uds.onExportJson = (result) => {
         expect(result).toBe(JSON.stringify([]));
       };
-      await uds.exportAsJson();
+      await uds.exportJson();
     });
   });
 });
