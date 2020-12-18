@@ -215,12 +215,12 @@ export class UserDataStore<T, U = {}> {
    * }
    * ```
    *
-   * @param json Data to import (expected that is exported by `this.exportAsJson`)
+   * @param json Data to import (expected that is exported by `this.exportJson`)
    * @returns Key to restore before importing json. And if error, also return `Error`.
    */
   public async importJson(json: string): Promise<[string, Error?]> {
     let result: [string, Error?];
-    const backupJson = await this.exportAsJson();
+    const backupJson = await this.exportJson();
     const backupKey = await this.backup(backupJson);
 
     await this.clear();
@@ -264,7 +264,7 @@ export class UserDataStore<T, U = {}> {
     return result;
   }
 
-  public async exportAsJson() {
+  public async exportJson() {
     const arr: DataContainer<T>[] = await this.getItems();
     const json = JSON.stringify(arr);
     if (this._onExportJson) {
@@ -273,9 +273,9 @@ export class UserDataStore<T, U = {}> {
     return json;
   }
 
-  public async exportAsJsonFile(fileName?: string): Promise<string | Error> {
+  public async exportJsonFile(fileName?: string): Promise<string | Error> {
     if (this.downloadJsonFile) {
-      const json = await this.exportAsJson();
+      const json = await this.exportJson();
       const fName = fileName ?? `${this.storeName}_${md5(json)}.json`;
       const result = await this.downloadJsonFile(fName, json);
       if (result instanceof Error) {
@@ -284,7 +284,7 @@ export class UserDataStore<T, U = {}> {
         return fName;
       }
     } else {
-      return new Error('Faild exportAsJsonFile: Export function is not set');
+      return new Error('Faild exportJsonFile: Export function is not set');
     }
   }
 
